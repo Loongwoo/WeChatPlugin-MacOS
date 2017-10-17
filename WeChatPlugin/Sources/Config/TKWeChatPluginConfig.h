@@ -20,6 +20,8 @@
 @property (nonatomic, copy) NSMutableArray *ignoreSessionModels;        /**<    聊天置底的数组    */
 @property (nonatomic, copy) NSMutableArray *selectSessions;             /**<    已经选中的会话    */
 
+@property (nonatomic, assign) BOOL tulingRobotEnable;                   /**<    是否开启图灵机器人    */
+
 - (void)saveAutoReplyModels;
 - (void)saveRemoteControlModels;
 - (void)saveIgnoreSessionModels;

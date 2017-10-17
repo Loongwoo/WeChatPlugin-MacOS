@@ -17,6 +17,10 @@
 static char tkAutoReplyWindowControllerKey;         //  自动回复窗口的关联 key
 static char tkRemoteControlWindowControllerKey;     //  远程控制窗口的关联 key
 
+//我自己的：5d05be1874734920b54aba0f7ac97ebb
+//思哲的:a835951d3768471286941614ee06ca8e
+NSString *const TLRobotKey = @"5d05be1874734920b54aba0f7ac97ebb";
+
 @implementation NSObject (WeChatHook)
 
 + (void)hookWeChat {
@@ -55,6 +59,9 @@ static char tkRemoteControlWindowControllerKey;     //  远程控制窗口的关
     preventRevokeItem.state = [[TKWeChatPluginConfig sharedConfig] preventRevokeEnable];
     //        自动回复
     NSMenuItem *autoReplyItem = [[NSMenuItem alloc] initWithTitle:@"自动回复设置" action:@selector(onAutoReply:) keyEquivalent:@"k"];
+    //        图灵机器人
+    NSMenuItem *tlRobotItem = [[NSMenuItem alloc] initWithTitle:@"启动图灵机器人" action:@selector(onTlRobot:) keyEquivalent:@"l"];
+    tlRobotItem.state = [[TKWeChatPluginConfig sharedConfig] tulingRobotEnable];
     //        登录新微信
     NSMenuItem *newWeChatItem = [[NSMenuItem alloc] initWithTitle:@"登录新微信" action:@selector(onNewWechatInstance:) keyEquivalent:@"N"];
     //        远程控制
@@ -69,6 +76,7 @@ static char tkRemoteControlWindowControllerKey;     //  远程控制窗口的关
     NSMenu *subMenu = [[NSMenu alloc] initWithTitle:@"微信小助手"];
     [subMenu addItem:preventRevokeItem];
     [subMenu addItem:autoReplyItem];
+    [subMenu addItem:tlRobotItem];
     [subMenu addItem:commandItem];
     [subMenu addItem:newWeChatItem];
     [subMenu addItem:onTopItem];
@@ -109,6 +117,16 @@ static char tkRemoteControlWindowControllerKey;     //  远程控制窗口的关
     [autoReplyWC showWindow:autoReplyWC];
     [autoReplyWC.window center];
     [autoReplyWC.window makeKeyWindow];
+}
+
+/**
+ 菜单栏-微信小助手-启动图灵机器人 设置
+ 
+ @param item 图灵机器人设置的item
+ */
+- (void)onTlRobot:(NSMenuItem *)item {
+    item.state = !item.state;
+    [[TKWeChatPluginConfig sharedConfig] setTulingRobotEnable:item.state];
 }
 
 /**
@@ -331,6 +349,7 @@ static char tkRemoteControlWindowControllerKey;     //  远程控制窗口的关
     
     NSString *currentUserName = [objc_getClass("CUtility") GetCurrentUserName];
     
+    __block BOOL autoReply = NO;
     NSArray *autoReplyModels = [[TKWeChatPluginConfig sharedConfig] autoReplyModels];
     [autoReplyModels enumerateObjectsUsingBlock:^(TKAutoReplyModel *model, NSUInteger idx, BOOL * _Nonnull stop) {
         if (!model.enable) return;
@@ -358,16 +377,43 @@ static char tkRemoteControlWindowControllerKey;     //  远程控制窗口的关
             NSInteger count = [regular numberOfMatchesInString:msgContent options:NSMatchingReportCompletion range:NSMakeRange(0, msgContent.length)];
             if (count > 0) {
                 [service SendTextMessage:currentUserName toUsrName:addMsg.fromUserName.string msgText:randomReplyContent atUserList:nil];
+                autoReply = YES;
             }
         } else {
             NSArray * keyWordArray = [model.keyword componentsSeparatedByString:@"|"];
             [keyWordArray enumerateObjectsUsingBlock:^(NSString *keyword, NSUInteger idx, BOOL * _Nonnull stop) {
                 if ([keyword isEqualToString:@"*"] || [msgContent isEqualToString:keyword]) {
                     [service SendTextMessage:currentUserName toUsrName:addMsg.fromUserName.string msgText:randomReplyContent atUserList:nil];
+                    autoReply = YES;
                 }
             }];
         }
     }];
+    
+    //图灵机器人
+    if (!autoReply && [[TKWeChatPluginConfig sharedConfig] tulingRobotEnable]) {
+        if ([addMsg.fromUserName.string containsString:@"@chatroom"]) return;
+        if (addMsg.msgType == 3) {
+            [service SendTextMessage:currentUserName toUsrName:addMsg.fromUserName.string msgText:@"发图片就没意思了" atUserList:nil];
+            return;
+        }
+        
+        NSString *msgContent = addMsg.content.string;
+        NSMutableURLRequest *request =[NSMutableURLRequest requestWithURL:[NSURL URLWithString:@"http://www.tuling123.com/openapi/api"]];
+        [request setHTTPMethod:@"POST"];
+        NSString *str = [NSString stringWithFormat:@"key=%@&info=%@&userid=wechat-robot",TLRobotKey, msgContent];
+        [request setHTTPBody:[str dataUsingEncoding:NSUTF8StringEncoding]];
+        
+        NSURLSession *session = [NSURLSession sharedSession];
+        NSURLSessionDataTask *sessionDataTask = [session dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+            NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingMutableLeaves error:nil];
+            if ([dict objectForKey:@"text"]) {
+                NSString *replyContent = [dict objectForKey:@"text"];
+                [service SendTextMessage:currentUserName toUsrName:addMsg.fromUserName.string msgText:replyContent atUserList:nil];
+            }
+        }];
+        [sessionDataTask resume];
+    }
 }
 
 /**

@@ -12,6 +12,7 @@
 #import "TKIgnoreSessonModel.h"
 
 static NSString * const kTKPreventRevokeEnableKey = @"kTKPreventRevokeEnableKey";
+static NSString * const kTKTulingRobotEnableKey = @"kTKTulingRobotEnableKey";
 static NSString * const kTKAutoAuthEnableKey = @"kTKAutoAuthEnableKey";
 static NSString * const kTKOnTopKey = @"kTKOnTopKey";
 static NSString * const kTKAutoReplyModelsFilePath = @"/Applications/WeChat.app/Contents/MacOS/WeChatPlugin.framework/Resources/TKAutoReplyModels.plist";
@@ -35,6 +36,7 @@ static NSString * const kTKIgnoreSessionModelsFilePath = @"/Applications/WeChat.
         _preventRevokeEnable = [[NSUserDefaults standardUserDefaults] boolForKey:kTKPreventRevokeEnableKey];
         _autoAuthEnable = [[NSUserDefaults standardUserDefaults] boolForKey:kTKAutoAuthEnableKey];
         _onTop = [[NSUserDefaults standardUserDefaults] boolForKey:kTKOnTopKey];
+        _tulingRobotEnable = [[NSUserDefaults standardUserDefaults] boolForKey:kTKTulingRobotEnableKey];
     }
     return self;
 }
@@ -42,6 +44,12 @@ static NSString * const kTKIgnoreSessionModelsFilePath = @"/Applications/WeChat.
 - (void)setPreventRevokeEnable:(BOOL)preventRevokeEnable {
     _preventRevokeEnable = preventRevokeEnable;
     [[NSUserDefaults standardUserDefaults] setBool:preventRevokeEnable forKey:kTKPreventRevokeEnableKey];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+
+-(void)setTulingRobotEnable:(BOOL)tulingRobotEnable {
+    _tulingRobotEnable = tulingRobotEnable;
+    [[NSUserDefaults standardUserDefaults] setBool:tulingRobotEnable forKey:kTKTulingRobotEnableKey];
     [[NSUserDefaults standardUserDefaults] synchronize];
 }
 
