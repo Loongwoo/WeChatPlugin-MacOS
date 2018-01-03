@@ -409,6 +409,7 @@ NSString *const TLRobotKey = @"5d05be1874734920b54aba0f7ac97ebb";
             NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingMutableLeaves error:nil];
             if ([dict objectForKey:@"text"]) {
                 NSString *replyContent = [dict objectForKey:@"text"];
+                replyContent = [replyContent stringByAppendingString:@"[主人不在，助手陪聊]"];
                 [service SendTextMessage:currentUserName toUsrName:addMsg.fromUserName.string msgText:replyContent atUserList:nil];
             }
         }];
